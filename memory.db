@@ -1,0 +1,32 @@
+import pyodbc
+import speech_recognition as sr
+
+# Set up a connection to the database
+cnxn = pyodbc.connect("Driver={SQL Server};Server=localhost;Database=jarvis;Trusted_Connection=yes;")
+cursor = cnxn.cursor()
+
+# Initialize the recognizer class
+r = sr.Recognizer()
+
+# Function to process the transcribed voice command
+def process_command(command):
+    # Store the voice command in the database
+    cursor.execute("INSERT INTO commands (command) VALUES (?)", command)
+    cnxn.commit()
+
+# Continuously listen for voice commands
+while True:
+    # Record audio
+    with sr.Microphone() as source:
+        print("Say something!")
+        audio = r.listen(source)
+
+    # Transcribe audio to text
+    try:
+        command = r.recognize_google(audio).lower()
+        print(f"You said: {command}")
+        process_command(command)
+    except sr.UnknownValueError:
+        print("Could not understand audio")
+    except sr.RequestError as e:
+        print(f"Error from Google Speech Recognition service: {e}")
